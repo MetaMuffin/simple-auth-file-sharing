@@ -9,6 +9,7 @@ import https from "https"
 import { Response, Request } from "express"
 import { existsSync, readFileSync } from "fs";
 import { exec } from "child_process";
+import { useCGI } from "./cgi"
 
 app.set('view engine', 'ejs');
 
@@ -25,12 +26,6 @@ function sanitizeFn(s: string): string {
     return s.replace("..", "").replace(/\/.$/g, "").replace("//", "").replace(/[0x00–0x1f0x80–0x9f\/\\\|\:\<\>\"\?\*]/g, "")
 }
 
-function useCGI(req: Request, res: Response, fpath: string) {
-    exec(fpath, (err, stdout, stderr) => {
-        if (err) return res.status(500).send(`Error: ${stderr}`)
-        res.status(200).send(stdout)
-    })
-}
 
 function authRefuse(res: Response) {
     res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="incorrect credencials"' });
@@ -56,13 +51,13 @@ app.use(async (req, res, next) => {
             var files = await Promise.all((await readdir(fpath)).map(async (fn) => {
                 var sta = await stat(join(fpath, fn))
                 var dir = sta.isDirectory()
-                var cgi = !!(sta.mode & 0o0111) && !dir
+                var cgi = !!(sta.mode % 2 == 1) && !dir
                 return { name: fn, cgi, dir }
             }))
             return res.render("dirlist", { files, dirname: "/" + spath })
         }
 
-        if (s.mode & 0o0111) {
+        if (s.mode % 2 == 1) {
             return useCGI(req, res, fpath)
         }
         if (s.isFile()) {
@@ -72,13 +67,13 @@ app.use(async (req, res, next) => {
     }
     return authRefuse(res)
 });
-app.listen(8089, "0.0.0.0", () => {
+
+app.disable("x-powered-by")
+
+const srv = http.createServer(app)
+srv.listen(8089, "0.0.0.0", () => {
     console.log("listening http service on :::8089");
 })
-// const srv = http.createServer(app)
-// srv.listen(8089, "0.0.0.0", () => {
-//     console.log("listening http service on :::8089");
-// })
 
 if (existsSync(join(__dirname, "../certs"))) {
     const srvs = https.createServer({
