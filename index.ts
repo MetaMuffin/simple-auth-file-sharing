@@ -10,7 +10,6 @@ import https from "https"
 import { Response } from "express"
 import { existsSync, readFileSync } from "fs";
 
-
 app.set('view engine', 'ejs');
 
 /*
@@ -22,11 +21,15 @@ function safePathName(s: string): string {
     return s.replace(/[\.\/]/, "")
 }
 
+function sanitizeFn(s:string): string {
+    return s.replace("..","").replace(/\/.$/g,"").replace("//","").replace(/[0x00–0x1f0x80–0x9f\/\\\|\:\<\>\"\?\*]/g,"")
+}
+
 app.use(async (req, res, next) => {
     const credentials = auth(req);
     if (credentials) {
         var fname = safePathName(credentials.name) + ":" + safePathName(credentials.pass)
-        var spath = req.url.replace("..", "").replace("\\", "").replace("//", "")
+        var spath = sanitizeFn(req.url)
         var fpath = join(__dirname, "files", fname, spath).replace(/\/$/g, "")
         console.log(`[${req.ip}] ${fpath}`);
         var s;
