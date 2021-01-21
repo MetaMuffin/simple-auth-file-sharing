@@ -13,7 +13,7 @@
     </li>
     <% for (const f of files) { %>
     <li>
-      <a href="./<%= f.name %>"><%= f.name %></a>
+      <a href="<%= (dirname == "/" ? "" : dirname) + "/" + f.name %>"><%= f.name %></a>
       <sup><%= f.cgi ? "(cgi)" : (f.dir ? "(directory)" : "(file)") %></sup>
     </li>
     <% } %>

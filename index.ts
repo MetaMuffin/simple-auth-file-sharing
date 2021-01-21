@@ -23,7 +23,7 @@ function safePathName(s: string): string {
 }
 
 function sanitizeFn(s: string): string {
-    return s.replace("..", "").replace(/\/.$/g, "").replace("//", "").replace(/[0x00–0x1f0x80–0x9f\/\\\|\:\<\>\"\?\*]/g, "")
+    return s.replace("..", "").replace(/^\//g,"").replace("//", "").replace(/[0x00–0x1f0x80–0x9f\\\|\:\<\>\"\?\*]/g, "")
 }
 
 
